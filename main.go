@@ -47,35 +47,56 @@ type Intern struct {
 	CompanyID  int    `json:"company_id"`
 }
 
+type Suburb struct {
+	Companies   []Company
+	AverageSize int
+}
+type Suburbs []Suburb
+
 //Keeping a bunch of stuff in here for now because i haven't worked out how to move it
 func main() {
 	defer TimeTaken(time.Now(), "main")
-	jsonFile, err := os.Open("data/InternsAtCompanies2.json")
+	one := "data/InternsAtCompanies1.json"
+	//two := "data/InternsAtCompanies2.json"
+	processData(one)
+	//processData(two)
+}
+
+//ProcessData this is a function that does all my main work so main is tidy
+func processData(location string) {
+	defer TimeTaken(time.Now(), location)
+	jsonFile, err := os.Open(location)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Successfully opened the file")
+	fmt.Printf("Successfully opened %s\n", location)
+
 	defer jsonFile.Close()
+
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 	var companies Companies
 	var interns Interns
 	json.Unmarshal(byteValue, &companies)
 	json.Unmarshal(byteValue, &interns)
-	//printAllDetails(companies)   			//this was the first test
-	//printCompanyDetails(companies)		//this was the second test
 	//printInternData(interns, companies) //this is stage ones function
 	printCompanySuburbData(companies)
+
+	//printAllDetails(companies)   		//this was the first test
+	//printCompanyDetails(companies)	//this was the second test
 }
 
 //TimeTaken  time taken to run a function
 func TimeTaken(t time.Time, name string) {
 	elapsed := time.Since(t)
 	fmt.Printf("TIME: %s took %s\n", name, elapsed)
+	fmt.Printf("--------------------------------------------------\n")
 }
+
 func printCompanySuburbData(companies Companies) {
 	companyLen := len(companies.Companies)
 	mapOfSuburbs := make(map[string][2]int)
 
+	//create suburb array
 	for i := 0; i < companyLen; i++ {
 		array := strings.SplitAfter(companies.Companies[i].Address, ",")
 		suburb := array[len(array)-1]
@@ -86,13 +107,6 @@ func printCompanySuburbData(companies Companies) {
 	sort.SliceStable(companies.Companies, func(i, j int) bool {
 		return companies.Companies[i].Suburb < companies.Companies[j].Suburb
 	})
-	// for i := 0; i < companyLen; i++ {
-	// 	fmt.Printf("Company %s \n", companies.Companies[i].Suburb)
-	// }
-
-	//counter := 0
-	// average := 0
-	// suburb := ""
 
 	for i := 0; i < companyLen; i++ {
 		applicableSuburb := companies.Companies[i].Suburb
@@ -106,17 +120,6 @@ func printCompanySuburbData(companies Companies) {
 			//fmt.Printf("Suburb: %s | %d| %d\n", applicableSuburb, val[0], val[1])
 
 		}
-		// if suburb == "" || suburb != applicableSuburb {
-		// 	if suburb != "" {
-		// 		fmt.Printf("Suburb %s has an average of %d per company\n", suburb, average/counter)
-		// 	}
-		// 	suburb = applicableSuburb
-		// 	counter = 1
-		// 	average += companies.Companies[i].StaffSize
-		// } else {
-		// 	counter++
-		// 	average += companies.Companies[i].StaffSize
-		// }
 	}
 	values := make([]int, 0, len(mapOfSuburbs))
 	for v := range mapOfSuburbs {
@@ -144,23 +147,23 @@ func printInternData(interns Interns, companies Companies) {
 	for i := 0; i < internsLen; i++ {
 		var intern = interns.Interns[i]
 		var companyID = intern.CompanyID
-		fmt.Printf("Intern Name: %s\n", interns.Interns[i].InternName.FirstName)
-		fmt.Printf("Last Name: %s\n", interns.Interns[i].InternName.LastName)
+		//fmt.Printf("Intern Name: %s\n", interns.Interns[i].InternName.FirstName)
+		//fmt.Printf("Last Name: %s\n", interns.Interns[i].InternName.LastName)
 		if intern.CompanyID >= 0 && intern.CompanyID < companyLen {
-			fmt.Printf("Company Name: %s\n", companies.Companies[companyID].CompanyName)
-			fmt.Printf("Company Email: %s\n", companies.Companies[companyID].Email)
+			//fmt.Printf("Company Name: %s\n", companies.Companies[companyID].CompanyName)
+			//fmt.Printf("Company Email: %s\n", companies.Companies[companyID].Email)
 			//tell us this company has at least one intern
 			companies.Companies[companyID].HasIntern = true
 		}
 	}
 	//loop again to check for unclaimed interns
 	//TODO maybe add this to a struct and do the same as how we do with companies
-	fmt.Printf("\nUnclaimed Interns: \n")
+	fmt.Printf("Unclaimed Interns: \n")
 	for j := 0; j < internsLen; j++ {
 		var intern = interns.Interns[j]
 		if intern.CompanyID < 0 || intern.CompanyID > companyLen {
-			fmt.Printf("Intern Name: %s\n", interns.Interns[j].InternName.FirstName)
-			fmt.Printf("Last Name: %s\n", interns.Interns[j].InternName.LastName)
+			fmt.Printf("Intern Name: %s %s\n", interns.Interns[j].InternName.FirstName, interns.Interns[j].InternName.LastName)
+			//fmt.Printf("Last Name: %s\n", interns.Interns[j].InternName.LastName)
 			internsWithoutJobs++
 		}
 	}
@@ -172,10 +175,11 @@ func printInternData(interns Interns, companies Companies) {
 			companiesWithoutInterns++
 		}
 	}
-	fmt.Printf("***********************************************\n")
+	fmt.Printf("--------------------------------------------------\n")
 	fmt.Printf("Companies without interns %d\n", companiesWithoutInterns)
-	fmt.Printf("***********************************************\n")
+	fmt.Printf("--------------------------------------------------\n")
 	fmt.Printf("Interns without jobs: %d\n", internsWithoutJobs)
+	fmt.Printf("--------------------------------------------------\n")
 
 }
 
@@ -190,9 +194,9 @@ func printCompanyDetails(companies Companies) {
 //this loops through all the companies and lists all their details
 func printAllDetails(companies Companies) {
 	for i := 0; i < len(companies.Companies); i++ {
-		fmt.Println("Index: " + string(companies.Companies[i].Index))
+		fmt.Println("Index: " + string(rune(companies.Companies[i].Index)))
 		fmt.Println("Company: " + companies.Companies[i].CompanyName)
-		fmt.Println("Staff Size: " + string(companies.Companies[i].StaffSize))
+		fmt.Println("Staff Size: " + string(rune(companies.Companies[i].StaffSize)))
 		fmt.Println("Address: " + companies.Companies[i].Address)
 		fmt.Println("Phone: " + companies.Companies[i].Phone)
 		fmt.Println("Email: " + companies.Companies[i].Email)
