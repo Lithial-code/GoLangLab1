@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"sort"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -47,19 +45,13 @@ type Intern struct {
 	CompanyID  int    `json:"company_id"`
 }
 
-type Suburb struct {
-	Companies   []Company
-	AverageSize int
-}
-type Suburbs []Suburb
-
 //Keeping a bunch of stuff in here for now because i haven't worked out how to move it
 func main() {
 	defer TimeTaken(time.Now(), "main")
 	one := "data/InternsAtCompanies1.json"
-	//two := "data/InternsAtCompanies2.json"
+	two := "data/InternsAtCompanies2.json"
 	processData(one)
-	//processData(two)
+	processData(two)
 }
 
 //ProcessData this is a function that does all my main work so main is tidy
@@ -78,8 +70,7 @@ func processData(location string) {
 	var interns Interns
 	json.Unmarshal(byteValue, &companies)
 	json.Unmarshal(byteValue, &interns)
-	//printInternData(interns, companies) //this is stage ones function
-	printCompanySuburbData(companies)
+	printInternData(interns, companies) //this is stage ones function
 
 	//printAllDetails(companies)   		//this was the first test
 	//printCompanyDetails(companies)	//this was the second test
@@ -90,48 +81,6 @@ func TimeTaken(t time.Time, name string) {
 	elapsed := time.Since(t)
 	fmt.Printf("TIME: %s took %s\n", name, elapsed)
 	fmt.Printf("--------------------------------------------------\n")
-}
-
-func printCompanySuburbData(companies Companies) {
-	companyLen := len(companies.Companies)
-	mapOfSuburbs := make(map[string][2]int)
-
-	//create suburb array
-	for i := 0; i < companyLen; i++ {
-		array := strings.SplitAfter(companies.Companies[i].Address, ",")
-		suburb := array[len(array)-1]
-		//fmt.Printf("Company %s \n", suburb)
-		companies.Companies[i].Suburb = suburb
-	}
-	//Sort by suburb, keeping original order or equal elements.
-	sort.SliceStable(companies.Companies, func(i, j int) bool {
-		return companies.Companies[i].Suburb < companies.Companies[j].Suburb
-	})
-
-	for i := 0; i < companyLen; i++ {
-		applicableSuburb := companies.Companies[i].Suburb
-
-		if val, ok := mapOfSuburbs[applicableSuburb]; !ok {
-			//fmt.Printf("value: %s\n", applicableSuburb)
-			val[0] += companies.Companies[i].StaffSize
-			val[1]++
-			mapOfSuburbs[applicableSuburb] = val
-
-			//fmt.Printf("Suburb: %s | %d| %d\n", applicableSuburb, val[0], val[1])
-
-		}
-	}
-	values := make([]int, 0, len(mapOfSuburbs))
-	for v := range mapOfSuburbs {
-		temp := int(v[0] / v[1])
-		values = append(values, temp)
-	}
-	sort.Ints(values)
-
-	for k, v := range mapOfSuburbs {
-		fmt.Printf("Suburb: %s has an average of %d staff company\n", k, v[0]/v[1])
-	}
-
 }
 
 //function that does all the heavy listing. Takes in the loaded json in the form of the interns and companies variables
@@ -159,6 +108,7 @@ func printInternData(interns Interns, companies Companies) {
 	//loop again to check for unclaimed interns
 	//TODO maybe add this to a struct and do the same as how we do with companies
 	fmt.Printf("Unclaimed Interns: \n")
+	fmt.Printf("If not 0 its because they have no company associated with them in the dataset\n")
 	for j := 0; j < internsLen; j++ {
 		var intern = interns.Interns[j]
 		if intern.CompanyID < 0 || intern.CompanyID > companyLen {
@@ -168,6 +118,8 @@ func printInternData(interns Interns, companies Companies) {
 		}
 	}
 	fmt.Printf("\nCompanies without Interns: \n")
+	fmt.Printf("If not 0 its because they had no interns associated with them in the dataset \n")
+
 	for k := 0; k < companyLen; k++ {
 		var company = companies.Companies[k]
 		if !company.HasIntern {
