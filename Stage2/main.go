@@ -47,15 +47,18 @@ type Intern struct {
 	CompanyID  int    `json:"company_id"`
 }
 
+//Suburb struct for adding proper suburb information to the program
 type Suburb struct {
 	Name        string
 	Companies   []Company
 	AverageSize int
 }
 
+//Suburbs array used to hold my collection of suburbs
 var Suburbs []Suburb
 
-//Keeping a bunch of stuff in here for now because i haven't worked out how to move it
+//Using comments to change my data sets.
+//TODO implement basic console UI if i get time at the end
 func main() {
 	defer TimeTaken(time.Now(), "main")
 	// one := "data/InternsAtCompanies1.json"
@@ -64,7 +67,9 @@ func main() {
 	processData(two)
 }
 
+//TODO clean up old comments and such
 //ProcessData this is a function that does all my main work so main is tidy
+//Processes one json file
 func processData(location string) {
 	defer TimeTaken(time.Now(), location)
 	jsonFile, err := os.Open(location)
@@ -80,6 +85,7 @@ func processData(location string) {
 	var interns Interns
 	json.Unmarshal(byteValue, &companies)
 	json.Unmarshal(byteValue, &interns)
+	//TODO switch statement here for UI
 	//printInternData(interns, companies) //this is stage ones function
 	printCompanySuburbData(companies)
 
@@ -88,17 +94,20 @@ func processData(location string) {
 }
 
 //TimeTaken  time taken to run a function
+//Used with the defer feature in go to start a timer and return the value at the end of the block
 func TimeTaken(t time.Time, name string) {
 	elapsed := time.Since(t)
 	fmt.Printf("TIME: %s took %s\n", name, elapsed)
 	fmt.Printf("--------------------------------------------------\n")
 }
 
+//used to print all of the information for stage 2
 func printCompanySuburbData(companies Companies) {
 	companyLen := len(companies.Companies)
 
-	//create suburbs
+	//create suburbs array
 	for i := 0; i < companyLen; i++ {
+		//pull the suburb name out of the address
 		array := strings.SplitAfter(companies.Companies[i].Address, ",")
 		suburb := array[len(array)-1]
 		if i == 0 {
@@ -121,7 +130,7 @@ func printCompanySuburbData(companies Companies) {
 		}
 	}
 	suburbsLen := len(Suburbs)
-	//this one adds the companies
+	//this one adds the companies to each suburb
 	for j := 0; j < companyLen; j++ {
 		array := strings.SplitAfter(companies.Companies[j].Address, ",")
 		suburb := array[len(array)-1]
@@ -132,7 +141,7 @@ func printCompanySuburbData(companies Companies) {
 			}
 		}
 	}
-	//this one averages the staff
+	//this one averages the staff for each suburb
 	for i := 0; i < suburbsLen; i++ {
 		numOfCompanies := len(Suburbs[i].Companies)
 
@@ -140,18 +149,26 @@ func printCompanySuburbData(companies Companies) {
 		// 	fmt.Println(company.CompanyName)
 		// }
 		for j := 0; j < numOfCompanies; j++ {
+			//checking to make sure the values exist
 			if Suburbs[i].Companies[j].StaffSize == 0 {
 				fmt.Println("staff size divide by zero immenient")
 			}
+			//add all the staff together
 			Suburbs[i].AverageSize += Suburbs[i].Companies[j].StaffSize
 		}
-		if Suburbs[i].AverageSize == 0 {
+		//checking to make sure the values exist
+		if Suburbs[i].AverageSize <= 0 {
+			fmt.Println("This suburbs size is out of bounds")
 			fmt.Printf("suburb effect %s\n", Suburbs[i].Name)
 			for _, company := range Suburbs[i].Companies {
 				fmt.Println(company.CompanyName)
 			}
 			//fmt.Println("average size divide by zero immenient")
+		} else {
+			//almost forgot this very important piece of math
+			Suburbs[i].AverageSize /= len(Suburbs[i].Companies)
 		}
+
 	}
 	//sort the suburbs
 	//I used this sorting function first. After getting it to work i moved on to quick sort
@@ -169,6 +186,8 @@ func printCompanySuburbData(companies Companies) {
 
 //Quick sort function. Takes in a suburb array and spits it back out sorted.
 //is approx 30% faster at sorting the datasets we have
+//Recursive quick sort function i modified from here
+//https://www.golangprograms.com/golang-program-for-implementation-of-quick-sort.html
 func quicksort(a []Suburb) []Suburb {
 	if len(a) < 2 {
 		return a
