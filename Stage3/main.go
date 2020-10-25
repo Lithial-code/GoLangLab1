@@ -60,6 +60,7 @@ type Suburb struct {
 //Suburbs array used to hold my collection of suburbs
 var Suburbs []Suburb
 
+//details on a simple local postgres location
 const (
 	host     = "localhost"
 	port     = 5432
@@ -106,14 +107,7 @@ func processData(location string) {
 	megaSplitQuery()
 }
 
-/*SELECT split_part(address, ',', 2) As "Suburbs",
-COUNT( DISTINCT companyname) AS "CompaniesArea",
-SUM(staffsize) AS "StaffTotal",
-ROUND(AVG(staffsize),2) AS "Average"
-FROM companies
-GROUP BY "Suburbs"
-ORDER BY "StaffTotal" DESC*/
-///this is probably how to do it
+// this is the query for part 3
 func megaSplitQuery() {
 	defer TimeTaken(time.Now(), "Mega Query")
 	sqlStatement := `SELECT split_part(address, ',', 2) As "Suburbs",
@@ -125,11 +119,12 @@ func megaSplitQuery() {
 	ORDER BY "Average" DESC`
 	query(sqlStatement, "mega query")
 }
+
+//function for posting the interns to the database
 func postInternsToDatabase(interns Interns) {
 	internlen := len(interns.Interns)
-
+	//this was to remember what i named everything
 	/*		internID INT SERIAL,
-
 			phone TEXT,
 			email TEXT,
 			companyID INT,
@@ -157,11 +152,15 @@ func postInternsToDatabase(interns Interns) {
 			companyID,
 		).Scan(&id)
 		if err != nil {
+			//logged things like this because i couldn't work out a way to do it differently.
+			//2 interns are missing from the data because the company doesnt exist and i didnt want to break my tables for them
 			log.Printf("%s | %d | This company doesn't exist so we're going to skip it", interns.Interns[i].InternName.FirstName, companyID)
 			log.Printf("Unable to execute insert into interns. %v", err) //this could be logged as fatal but it would kill all the rest of the inserts
 		}
 	}
 }
+
+//posts the companies to the database
 func postCompaniesToDatabase(companies Companies) {
 	companyLen := len(companies.Companies)
 
@@ -181,7 +180,7 @@ func postCompaniesToDatabase(companies Companies) {
 	var id int64
 	//execute the sql statement and return a response
 	for i := 0; i < companyLen; i++ {
-		//suburbify
+		//suburbify - stolen from stage 2
 		array := strings.SplitAfter(companies.Companies[i].Address, ",")
 		suburb := array[len(array)-1]
 		err := db.QueryRow(sqlstatement,
@@ -231,6 +230,7 @@ func createConnection() *sql.DB {
 
 //CreateTable creates a default table in the database
 func createTable() {
+	//got sick of breaking my databases manually
 	sqlStatement :=
 		`DROP TABLE IF EXISTS interns;
 		 DROP TABLE IF EXISTS companies;
@@ -274,6 +274,8 @@ func createTable() {
 	executeQuery(sqlStatement, "create interns")
 
 }
+
+//easy way to do database executions. probably bad tho
 func executeQuery(sqlStatement string, qID string) {
 	db := createConnection()
 	//prepares to close database when done
@@ -286,6 +288,8 @@ func executeQuery(sqlStatement string, qID string) {
 	//print the response maybe
 	fmt.Printf("%s\n ", res)
 }
+
+//the grunt work of the mega query
 func query(sqlStatement string, qID string) {
 	db := createConnection()
 	//prepares to close database when done
@@ -296,6 +300,7 @@ func query(sqlStatement string, qID string) {
 		log.Fatalf("Unable to execute %s | . %v", qID, err)
 	}
 	var suburbs []Suburb
+	//dont forget to close the rows
 	defer rows.Close()
 	// iterate over the rows
 	for rows.Next() {
@@ -312,6 +317,7 @@ func query(sqlStatement string, qID string) {
 		suburbs = append(suburbs, suburb)
 
 	}
+	//print the things
 	for _, item := range suburbs {
 		fmt.Printf("%s : %.2f\n", item.Name, item.AverageSize)
 	}
