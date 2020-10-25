@@ -61,10 +61,10 @@ var Suburbs []Suburb
 //TODO implement basic console UI if i get time at the end
 func main() {
 	defer TimeTaken(time.Now(), "main")
-	// one := "data/InternsAtCompanies1.json"
-	two := "data/InternsAtCompanies2.json"
-	// processData(one)
-	processData(two)
+	one := "data/InternsAtCompanies1.json"
+	//two := "data/InternsAtCompanies2.json"
+	processData(one)
+	//processData(two)
 }
 
 //TODO clean up old comments and such
